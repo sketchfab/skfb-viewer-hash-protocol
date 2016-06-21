@@ -118,7 +118,15 @@ ViewerHashMessage.prototype._getStringifiedData = function _getStringifiedData()
 };
 
 ViewerHashMessage.prototype.toString = function toString() {
-  return (this.from || '') + METADATA_SEPARATOR + (this.to || '') + METADATA_SEPARATOR + this._getStringifiedData() + MESSAGE_SEPARATOR;
+  var str = '';
+  if (this.from) {
+    str += this.from + METADATA_SEPARATOR;
+  }
+  if (this.to) {
+    str += this.to + METADATA_SEPARATOR;
+  }
+  str += this._getStringifiedData() + MESSAGE_SEPARATOR
+  return str;
 };
 
 var ViewerHashAPI = function ViewerHashAPI(opt) {
@@ -134,7 +142,17 @@ var ViewerHashAPI = function ViewerHashAPI(opt) {
 };
 
 ViewerHashAPI.prototype.getMessages = function(hash, excludeSelf) {
-  return _parseHash(hash, this.device);
+  var messages = _parseHash(hash, this.device);
+  var newHash = hash;
+
+  for (var k in messages) {
+    newHash = newHash.replace(messages[k].toString(), '');
+  }
+
+  return {
+    messages: messages,
+    hash: newHash
+  };
 }
 
 ViewerHashAPI.prototype.prepare = function prepare(message) {
