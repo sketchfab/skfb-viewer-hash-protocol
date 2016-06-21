@@ -48,8 +48,6 @@ var _parseHash = function(str, device) {
 
 var _parseMessage = function(str) {
 
-  console.log('Parsing message : ', str);
-
   var messageString = str;
   var message = {};
 
@@ -74,8 +72,6 @@ var _parseMessage = function(str) {
     message.stringData = message.data;
     message.data = _parseMessageData(message.data);
   }
-
-  console.log('parse result : ', message);
 
   return message;
 
