@@ -73,6 +73,8 @@ var _parseMessage = function(str) {
     message.data = _parseMessageData(message.data);
   }
 
+  message._originalString = str;
+
   return message;
 
 };
@@ -88,7 +90,7 @@ var ViewerHashMessage = function ViewerHashMessage(opt) {
   this._msg = msg;
   this.from = msg.from;
   this.to = msg.to;
-  this.data = msg.data
+  this.data = msg.data;
 
 };
 
@@ -98,19 +100,19 @@ ViewerHashMessage.prototype._getStringifiedData = function _getStringifiedData()
   if (typeof this.data === 'string') {
     return this.data;
   } else if (Array.isArray(this.data)) {
-    return this.data.join(',')
+    return this.data.join(',');
   } else if (typeof this.data === 'object') {
     for (var k in this.data) {
 
       var rData;
 
       if (typeof this.data[k] === 'string') {
-        rData = this.data[k]
+        rData = this.data[k];
       } else if (Array.isArray(this.data[k])) {
         rData = this.data[k].join(',');
       }
 
-      d += k + DATA_SEPARATOR + rData
+      d += k + DATA_SEPARATOR + rData;
     }
   }
 
@@ -125,7 +127,7 @@ ViewerHashMessage.prototype.toString = function toString() {
   if (this.to) {
     str += this.to + METADATA_SEPARATOR;
   }
-  str += this._getStringifiedData() + MESSAGE_SEPARATOR
+  str += this._getStringifiedData() + MESSAGE_SEPARATOR;
   return str;
 };
 
@@ -141,33 +143,23 @@ var ViewerHashAPI = function ViewerHashAPI(opt) {
 
 };
 
-ViewerHashAPI.prototype.getMessages = function(hash, excludeSelf) {
+ViewerHashAPI.prototype.getMessages = function(hash) {
   var messages = _parseHash(hash, this.device);
   var newHash = hash;
 
   for (var k in messages) {
-    newHash = newHash.replace(messages[k].toString(), '');
+    if (messages[k]._msg && messages[k]._msg._originalString) {
+      newHash = newHash.replace(messages[k]._msg._originalString, '');
+    } else {
+      newHash = newHash.replace(messages[k].toString(), '');
+    }
   }
 
   return {
     messages: messages,
     hash: newHash
   };
-}
-
-ViewerHashAPI.prototype.prepare = function prepare(message) {
-
-  if (!(message instanceof ViewerHashMessage)) {
-    msg = new ViewerHashMessage(message);
-  }
-
-  if (!msg.from) {
-    msg.from = this.device;
-  }
-
-  return msg;
-
-}
+};
 
 
 module.exports = ViewerHashAPI;
