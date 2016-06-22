@@ -1,6 +1,6 @@
 {
   "name": "skfb-viewer-protocol",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A parser for hash messages exchanged between the viewer and devices",
   "main": "index.js",
   "scripts": {
