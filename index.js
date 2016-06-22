@@ -73,7 +73,7 @@ var _parseMessage = function(str) {
     message.data = _parseMessageData(message.data);
   }
 
-  message._originalString = str;
+  message._originalString = (str + MESSAGE_SEPARATOR);
 
   return message;
 
@@ -136,11 +136,84 @@ var ViewerHashAPI = function ViewerHashAPI(opt) {
   opt = opt || {};
 
   if (!opt.device) {
-    throw new Error('ViewerHasAPI options need to contain the "device" identifier property');
+    throw new Error('ViewerHashAPI options need to contain the "device" identifier property');
   }
+  if (opt.listen) {
+    this.listen();
+  }
+
+  this._callbackNameCounter = 0;
+
+  this._callbacks = {};
 
   this.device = opt.device;
 
+};
+
+ViewerHashAPI.prototype.updateHash = function(m) {
+  if (m instanceof ViewerHashMessage) {
+    m = m.toString();
+  }
+  if (typeof m !== 'string') {
+    return;
+  }
+  if (window.location.hash.indexOf(m) === -1)
+    window.location.hash = window.location.hash + m;
+};
+
+ViewerHashAPI.prototype.removeFromHash = function(m) {
+  if (!(m instanceof ViewerHashMessage)) {
+    throw new Error('Please supply an instance of ViewerHashMessage');
+  }
+
+  var hash = window.location.hash;
+  if (m._msg && m._msg._originalString) {
+    hash = hash.replace(m._msg._originalString, '');
+  } else {
+    hash = hash.replace(m.toString(), '');
+  }
+
+  window.location.hash = hash;
+
+}
+
+ViewerHashAPI.prototype.listen = function() {
+  window.addEventListener('hashchange', this._onHashChange.bind(this), false);
+};
+
+ViewerHashAPI.prototype._onHashChange = function() {
+  var messages = this.getMessages(window.location.hash);
+  this.notifyCallbacks(messages);
+};
+
+ViewerHashAPI.prototype.registerCallback = function(aid, acb) {
+
+  var id,
+    cb;
+
+  if (typeof aid === 'function') {
+    cb = aid;
+    id = 'cb' + (++this._callbackNameCounter);
+  } else {
+    id = aid;
+    cb = acb;
+  }
+
+  this._callbacks = this._callbacks || {};
+  this._callbacks[id] = cb;
+};
+
+ViewerHashAPI.prototype.removeCallback = function(id) {
+  delete this._callbacks[id];
+};
+
+ViewerHashAPI.prototype.notifyCallbacks = function(messages) {
+  console.log(this._callbacks)
+  Object.keys(this._callbacks).forEach(function(k) {
+    if (typeof this._callbacks[k] === 'function') {
+      this._callbacks[k](messages);
+    }
+  }.bind(this));
 };
 
 ViewerHashAPI.prototype.getMessages = function(hash) {
@@ -161,5 +234,11 @@ ViewerHashAPI.prototype.getMessages = function(hash) {
   };
 };
 
+ViewerHashAPI.prototype.createMessage = function(data) {
+  _.extend(data, {
+    from: this.device
+  });
+  return new ViewerHashMessage(data);
+};
 
 module.exports = ViewerHashAPI;
