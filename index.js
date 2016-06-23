@@ -1,3 +1,5 @@
+var BackboneEvents = require('backbone-events-standalone');
+
 var METADATA_SEPARATOR = ':';
 var MESSAGE_SEPARATOR = ';';
 var ARRAY_SEPARATOR = ',';
@@ -37,7 +39,7 @@ var _parseHash = function(str, device) {
 
   for (var k in messages) {
     var aMessage = new ViewerHashMessage(_parseMessage(messages[k]));
-    if (!aMessage.from || aMessage.from !== device) {
+    if ((!aMessage.from || aMessage.from !== device) && aMessage.data) {
       messageObjects.push(aMessage);
     }
   }
@@ -142,77 +144,81 @@ var ViewerHashAPI = function ViewerHashAPI(opt) {
     this.listen();
   }
 
-  this._callbackNameCounter = 0;
-
-  this._callbacks = {};
-
   this.device = opt.device;
 
 };
 
-ViewerHashAPI.prototype.updateHash = function(m) {
+ViewerHashAPI.prototype.appendToHash = function(m, target) {
   if (m instanceof ViewerHashMessage) {
     m = m.toString();
   }
+
   if (typeof m !== 'string') {
     return;
   }
-  if (window.location.hash.indexOf(m) === -1)
-    window.location.hash = window.location.hash + m;
+
+  target = _ensureHashTarget(target);
+
+  if (target.location.hash.indexOf(m) === -1)
+    target.location.hash = target.location.hash + m;
 };
 
-ViewerHashAPI.prototype.removeFromHash = function(m) {
+ViewerHashAPI.prototype.removeFromHash = function(m, target) {
   if (!(m instanceof ViewerHashMessage)) {
     throw new Error('Please supply an instance of ViewerHashMessage');
   }
 
-  var hash = window.location.hash;
+  target = _ensureHashTarget(target);
+
+  var hash = target.location.hash;
   if (m._msg && m._msg._originalString) {
     hash = hash.replace(m._msg._originalString, '');
   } else {
     hash = hash.replace(m.toString(), '');
   }
 
-  window.location.hash = hash;
+  target.location.hash = hash;
 
 }
 
-ViewerHashAPI.prototype.listen = function() {
-  window.addEventListener('hashchange', this._onHashChange.bind(this), false);
-};
+var _ensureHashTarget = function(target) {
 
-ViewerHashAPI.prototype._onHashChange = function() {
-  var messages = this.getMessages(window.location.hash);
-  this.notifyCallbacks(messages);
-};
+  target = target || window;
 
-ViewerHashAPI.prototype.registerCallback = function(aid, acb) {
-
-  var id,
-    cb;
-
-  if (typeof aid === 'function') {
-    cb = aid;
-    id = 'cb' + (++this._callbackNameCounter);
-  } else {
-    id = aid;
-    cb = acb;
+  if (target && target.tagName && target.tagName.toLowerCase() === 'iframe') {
+    target = target.contentWindow;
   }
 
-  this._callbacks = this._callbacks || {};
-  this._callbacks[id] = cb;
+  if (!target.addEventListener) {
+    throw new Error('Could not bind an event to supplied target. Please supply an instance of window or an iframe.');
+  }
+
+  return target;
+
+}
+
+ViewerHashAPI.prototype.listen = function(target) {
+
+  target = _ensureHashTarget(target);
+  return target.addEventListener('hashchange', this._onHashChange.bind(this, target), false);
+
 };
 
-ViewerHashAPI.prototype.removeCallback = function(id) {
-  delete this._callbacks[id];
-};
+ViewerHashAPI.prototype._onHashChange = function(target) {
 
-ViewerHashAPI.prototype.notifyCallbacks = function(messages) {
-  console.log(this._callbacks)
-  Object.keys(this._callbacks).forEach(function(k) {
-    if (typeof this._callbacks[k] === 'function') {
-      this._callbacks[k](messages);
+  var messages = this.getMessages(target.location.hash);
+
+  (messages.messages || []).forEach(function(m) {
+
+    if (m && m.data && !Array.isArray(m)) {
+      var triggerKey = m.data;
+      if (typeof m.data === 'object') {
+        triggerKey = Object.keys(m.data)[0];
+      }
+      this.trigger('message:' + triggerKey, m);
     }
+    this.trigger('message', m);
+
   }.bind(this));
 };
 
@@ -239,6 +245,14 @@ ViewerHashAPI.prototype.createMessage = function(data) {
     from: this.device
   });
   return new ViewerHashMessage(data);
+};
+
+BackboneEvents.mixin(ViewerHashAPI.prototype);
+ViewerHashMessage.prototype.removeFromHash = function() {
+  ViewerHashAPI.prototype.removeFromHash.call(this, this);
+};
+ViewerHashMessage.prototype.appendToHash = function() {
+  ViewerHashAPI.prototype.appendToHash.call(this, this);
 };
 
 module.exports = ViewerHashAPI;

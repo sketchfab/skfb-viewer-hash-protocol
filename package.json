@@ -1,11 +1,14 @@
 {
   "name": "skfb-viewer-protocol",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A parser for hash messages exchanged between the viewer and devices",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Arthur Jamain / Sketchfab",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "backbone-events-standalone": "^0.2.7"
+  }
 }
