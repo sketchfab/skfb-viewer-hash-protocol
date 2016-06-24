@@ -241,9 +241,8 @@ ViewerHashAPI.prototype.getMessages = function(hash) {
 };
 
 ViewerHashAPI.prototype.createMessage = function(data) {
-  _.extend(data, {
-    from: this.device
-  });
+  data = data || {};
+  data.from = this.device;
   return new ViewerHashMessage(data);
 };
 
