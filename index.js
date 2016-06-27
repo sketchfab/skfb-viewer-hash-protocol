@@ -257,7 +257,7 @@ ViewerHashAPI.prototype._onHashChange = function(target) {
 
       if (typeof m.data === 'object') {
         
-        let triggerKeys = Object.keys(m.data);
+        var triggerKeys = Object.keys(m.data);
         if (m.data._key) {
           triggerKey = m.data._key;
         } else {
