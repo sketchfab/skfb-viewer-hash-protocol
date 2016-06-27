@@ -95,11 +95,11 @@ var ViewerHashMessage = function ViewerHashMessage(opt) {
   this._msg = msg;
   this.from = msg.from;
   this.to = msg.to;
-  this.data = this._ensureSafeData(msg.data);
+  this.data = _decodeData(msg.data);
 
 };
 
-ViewerHashMessage.prototype._ensureSafeData = function _ensureSafeData (data) {
+var _ensureSafeData = function _ensureSafeData (data) {
 
   if (typeof data === 'string') {
     data = encodeURIComponent(data);
@@ -119,22 +119,42 @@ ViewerHashMessage.prototype._ensureSafeData = function _ensureSafeData (data) {
 
 };
 
+var _decodeData = function _decodeData (data) {
+
+  if (typeof data === 'string') {
+    data = decodeURIComponent(data);
+  } else if (Array.isArray(data)) {
+    data = data.map(decodeURIComponent);
+  } else if ((typeof data).toLowerCase() === 'object') {
+    Object.keys(data).forEach((key) => {
+      if (typeof data[key] === 'string') {
+        data[key] = decodeURIComponent(data[key]);
+      } else if (Array.isArray(data[key])) {
+        data[key] = data[key].map(decodeURIComponent)
+      }
+    })
+  }
+
+  return data;
+
+};
+
 ViewerHashMessage.prototype._getStringifiedData = function _getStringifiedData() {
   var d = '';
 
   if (typeof this.data === 'string') {
-    return decodeURIComponent( this.data );
+    return encodeURIComponent( this.data );
   } else if (Array.isArray(this.data)) {
-    return this.data.map(decodeURIComponent).join(',');
+    return this.data.map(encodeURIComponent).join(',');
   } else if (typeof this.data === 'object') {
     for (var k in this.data) {
 
       var rData;
 
       if (typeof this.data[k] === 'string') {
-        rData = decodeURIComponent(this.data[k]);
+        rData = encodeURIComponent(this.data[k]);
       } else if (Array.isArray(this.data[k])) {
-        rData = this.data[k].map(decodeURIComponent).join(',');
+        rData = this.data[k].map(encodeURIComponent).join(',');
       }
 
       d += k + DATA_SEPARATOR + rData;
@@ -236,9 +256,18 @@ ViewerHashAPI.prototype._onHashChange = function(target) {
     if (m && m.data && !Array.isArray(m)) {
       var triggerKey = m.data;
       if (typeof m.data === 'object') {
-        triggerKey = Object.keys(m.data)[0];
+        
+        let triggerKeys = Object.keys(m.data);
+        if (m.data._key) {
+          triggerKey = m.data._key;
+        } else if (triggerKeys.length === 1) {
+          triggerKey = Object.keys(m.data)[0];
+        }
+
       }
-      this.trigger('message:' + triggerKey, m);
+      if ( triggerKey ) {
+        this.trigger('message:' + triggerKey, m);
+      }
     }
     this.trigger('message', m);
 
@@ -246,6 +275,7 @@ ViewerHashAPI.prototype._onHashChange = function(target) {
 };
 
 ViewerHashAPI.prototype.getMessages = function(hash) {
+
   var messages = _parseHash(hash, this.device);
   var newHash = hash;
 
