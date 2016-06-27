@@ -4,24 +4,27 @@ var METADATA_SEPARATOR = ':';
 var MESSAGE_SEPARATOR = ';';
 var ARRAY_SEPARATOR = ',';
 var DATA_SEPARATOR = '=';
+var QS_SEPARATOR = '&';
 
 
 var _parseMessageData = function(dataString) {
 
-  var dataObject;
+  var dataObject = {};
+  var dataParts = dataString.split(QS_SEPARATOR);
 
-  if (dataString.indexOf(DATA_SEPARATOR) > -1) {
-    var keyVal = dataString.split(DATA_SEPARATOR);
-    if (keyVal[1].indexOf(ARRAY_SEPARATOR) > -1) {
-      keyVal[1] = keyVal[1].split(ARRAY_SEPARATOR);
+  dataParts.forEach((dataPart) => {
+    if (dataPart.indexOf(DATA_SEPARATOR) > -1) {
+      var keyVal = dataPart.split(DATA_SEPARATOR);
+      if (keyVal[1].indexOf(ARRAY_SEPARATOR) > -1) {
+        keyVal[1] = keyVal[1].split(ARRAY_SEPARATOR);
+      }
+      dataObject[keyVal[0]] = keyVal[1];
+    } else if (dataPart.indexOf(ARRAY_SEPARATOR) > -1) {
+      dataObject = dataPart.split(ARRAY_SEPARATOR);
+    } else {
+      dataObject = dataPart;
     }
-    dataObject = {};
-    dataObject[keyVal[0]] = keyVal[1];
-  } else if (dataString.indexOf(ARRAY_SEPARATOR) > -1) {
-    dataObject = dataString.split(ARRAY_SEPARATOR);
-  } else {
-    dataObject = dataString;
-  }
+  });
 
   return dataObject;
 };
@@ -92,7 +95,27 @@ var ViewerHashMessage = function ViewerHashMessage(opt) {
   this._msg = msg;
   this.from = msg.from;
   this.to = msg.to;
-  this.data = msg.data;
+  this.data = this._ensureSafeData(msg.data);
+
+};
+
+ViewerHashMessage.prototype._ensureSafeData = function _ensureSafeData (data) {
+
+  if (typeof data === 'string') {
+    data = encodeURIComponent(data);
+  } else if (Array.isArray(data)) {
+    data = data.map(encodeURIComponent);
+  } else if ((typeof data).toLowerCase() === 'object') {
+    Object.keys(data).forEach((key) => {
+      if (typeof data[key] === 'string') {
+        data[key] = encodeURIComponent(data[key]);
+      } else if (Array.isArray(data[key])) {
+        data[key] = data[key].map(encodeURIComponent)
+      }
+    })
+  }
+
+  return data;
 
 };
 
@@ -100,18 +123,18 @@ ViewerHashMessage.prototype._getStringifiedData = function _getStringifiedData()
   var d = '';
 
   if (typeof this.data === 'string') {
-    return this.data;
+    return decodeURIComponent( this.data );
   } else if (Array.isArray(this.data)) {
-    return this.data.join(',');
+    return this.data.map(decodeURIComponent).join(',');
   } else if (typeof this.data === 'object') {
     for (var k in this.data) {
 
       var rData;
 
       if (typeof this.data[k] === 'string') {
-        rData = this.data[k];
+        rData = decodeURIComponent(this.data[k]);
       } else if (Array.isArray(this.data[k])) {
-        rData = this.data[k].join(',');
+        rData = this.data[k].map(decodeURIComponent).join(',');
       }
 
       d += k + DATA_SEPARATOR + rData;
