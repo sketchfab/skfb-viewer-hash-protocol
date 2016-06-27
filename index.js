@@ -11,7 +11,7 @@ var _parseMessageData = function(dataString) {
   var dataObject = {};
   var dataParts = dataString.split(QS_SEPARATOR);
 
-  dataParts.forEach((dataPart) => {
+  dataParts.forEach(function (dataPart) {
     if (dataPart.indexOf(DATA_SEPARATOR) > -1) {
       var keyVal = dataPart.split(DATA_SEPARATOR);
       if (keyVal[1].indexOf(ARRAY_SEPARATOR) > -1) {
@@ -23,7 +23,7 @@ var _parseMessageData = function(dataString) {
     } else {
       dataObject = dataPart;
     }
-  });
+  }.bind(this));
 
   return dataObject;
 };
@@ -105,13 +105,13 @@ var _ensureSafeData = function _ensureSafeData (data) {
   } else if (Array.isArray(data)) {
     data = data.map(encodeURIComponent);
   } else if ((typeof data).toLowerCase() === 'object') {
-    Object.keys(data).forEach((key) => {
+    Object.keys(data).forEach(function (key) {
       if (typeof data[key] === 'string') {
         data[key] = encodeURIComponent(data[key]);
       } else if (Array.isArray(data[key])) {
         data[key] = data[key].map(encodeURIComponent)
       }
-    })
+    }.bind(this))
   }
 
   return data;
@@ -125,13 +125,13 @@ var _decodeData = function _decodeData (data) {
   } else if (Array.isArray(data)) {
     data = data.map(decodeURIComponent);
   } else if ((typeof data).toLowerCase() === 'object') {
-    Object.keys(data).forEach((key) => {
+    Object.keys(data).forEach(function (key) {
       if (typeof data[key] === 'string') {
         data[key] = decodeURIComponent(data[key]);
       } else if (Array.isArray(data[key])) {
         data[key] = data[key].map(decodeURIComponent)
       }
-    })
+    }.bind(this))
   }
 
   return data;
