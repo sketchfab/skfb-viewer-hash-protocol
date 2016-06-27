@@ -6,7 +6,6 @@ var ARRAY_SEPARATOR = ',';
 var DATA_SEPARATOR = '=';
 var QS_SEPARATOR = '&';
 
-
 var _parseMessageData = function(dataString) {
 
   var dataObject = {};
@@ -255,16 +254,18 @@ ViewerHashAPI.prototype._onHashChange = function(target) {
 
     if (m && m.data && !Array.isArray(m)) {
       var triggerKey = m.data;
+
       if (typeof m.data === 'object') {
         
         let triggerKeys = Object.keys(m.data);
         if (m.data._key) {
           triggerKey = m.data._key;
-        } else if (triggerKeys.length === 1) {
-          triggerKey = Object.keys(m.data)[0];
+        } else {
+          triggerKey = triggerKeys[0];
         }
 
       }
+
       if ( triggerKey ) {
         this.trigger('message:' + triggerKey, m);
       }
