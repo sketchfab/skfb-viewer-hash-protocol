@@ -186,7 +186,7 @@ var ViewerHashAPI = function ViewerHashAPI(opt) {
     throw new Error('ViewerHashAPI options need to contain the "device" identifier property');
   }
   if (opt.listen) {
-    this.listen();
+    this.listen(opt.listen);
   }
 
   this.device = opt.device;
@@ -228,7 +228,8 @@ ViewerHashAPI.prototype.removeFromHash = function(m, target) {
 
 var _ensureHashTarget = function(target) {
 
-  target = target || window;
+
+  target = (target === true ? window : target) || window;
 
   if (target && target.tagName && target.tagName.toLowerCase() === 'iframe') {
     target = target.contentWindow;
