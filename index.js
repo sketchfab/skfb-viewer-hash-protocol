@@ -8,6 +8,9 @@ var QS_SEPARATOR = '&';
 
 var _parseMessageData = function(dataString) {
 
+  dataString = dataString || '';
+  dataString = decodeURIComponent(dataString);
+  
   var dataObject = {};
   var dataParts = dataString.split(QS_SEPARATOR);
 
