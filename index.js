@@ -17,9 +17,6 @@ var _parseMessageData = function(dataString) {
   dataParts.forEach(function (dataPart) {
     if (dataPart.indexOf(DATA_SEPARATOR) > -1) {
       var keyVal = dataPart.split(DATA_SEPARATOR);
-      if (keyVal[1].indexOf(ARRAY_SEPARATOR) > -1) {
-        keyVal[1] = keyVal[1].split(ARRAY_SEPARATOR);
-      }
       dataObject[keyVal[0]] = keyVal[1];
     } else if (dataPart.indexOf(ARRAY_SEPARATOR) > -1) {
       dataObject = dataPart.split(ARRAY_SEPARATOR);
