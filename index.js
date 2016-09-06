@@ -10,7 +10,7 @@ var _parseMessageData = function(dataString) {
 
   dataString = dataString || '';
   dataString = decodeURIComponent(dataString);
-  
+
   var dataObject = {};
   var dataParts = dataString.split(QS_SEPARATOR);
 
@@ -249,30 +249,33 @@ ViewerHashAPI.prototype.listen = function(target) {
 
 ViewerHashAPI.prototype._onHashChange = function(target) {
 
-  var messages = this.getMessages(target.location.hash);
+  var getMessages = this.getMessages(target.location.hash);
+  var messages = getMessages.messages || [];
 
-  (messages.messages || []).forEach(function(m) {
+  messages.forEach(function(m) {
 
-    if (m && m.data && !Array.isArray(m)) {
-      var triggerKey = m.data;
+    if( m ) {
 
-      if (typeof m.data === 'object') {
-        
-        var triggerKeys = Object.keys(m.data);
-        if (m.data._key) {
-          triggerKey = m.data._key;
-        } else {
-          triggerKey = triggerKeys[0];
+      if( m.data && !Array.isArray(m) ) {
+        var triggerKey = m.data;
+
+        if (typeof m.data === 'object') {
+
+          var triggerKeys = Object.keys(m.data);
+          if (m.data._key) {
+            triggerKey = m.data._key;
+          } else {
+            triggerKey = triggerKeys[0];
+          }
+
         }
-
-      }
-
-      if ( triggerKey ) {
-        this.trigger('message:' + triggerKey, m);
+        if ( triggerKey ) {
+          this.trigger('message:' + triggerKey, m);
+        }
+      } else {
+        this.trigger('message', m);
       }
     }
-    this.trigger('message', m);
-
   }.bind(this));
 };
 
